@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "hw"
+name = "hw-rs"
 version = "0.1.0"

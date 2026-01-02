@@ -1,0 +1,13 @@
+# glibc: static + PIE
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-feature=+crt-static"
+]
+
+# musl: static + no-PIE (requires system musl: pacman -S musl)
+[target.x86_64-unknown-linux-musl]
+linker = "musl-gcc"
+rustflags = [
+    "-C", "relocation-model=static",
+    "-C", "link-arg=-no-pie",
+]

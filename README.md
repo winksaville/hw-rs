@@ -1,21 +1,21 @@
-# hw
+# hw-rs
 
-Simple hw:
-```
+A minimal "Hello, world!" program in Rust, optimized for binary size.
+
+## Code
+
+```rust
 fn main() {
     println!("Hello, world!");
 }
 ```
 
-Optimized for size in Rust, Cargo.toml with `profile.release`:
-```
-[package]
-name = "hw"
-version = "0.1.0"
-edition = "2024"
+## Build Configuration
 
-[dependencies]
+### Cargo.toml
 
+Size optimizations in `profile.release`:
+```toml
 [profile.release]
 opt-level = 'z'
 lto = true
@@ -24,13 +24,61 @@ panic = "abort"
 strip = true
 ```
 
-Is 300k:
+### .cargo/config.toml
+
+Two targets are configured:
+```toml
+# glibc: static + PIE
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "target-feature=+crt-static"
+]
+
+# musl: static + no-PIE (requires system musl: pacman -S musl)
+[target.x86_64-unknown-linux-musl]
+linker = "musl-gcc"
+rustflags = [
+    "-C", "relocation-model=static",
+    "-C", "link-arg=-no-pie",
+]
 ```
-$ cargo build --release ; ls -l target/release/hw
-   Compiling hw v0.1.0 (/home/wink/data/prgs/hw)
-    Finished `release` profile [optimized] target(s) in 2.75s
--rwxr-xr-x 2 wink users 301376 Jan  1 12:41 target/release/hw
+
+## Compile Instructions
+
+### Prerequisites
+
+Install the required targets:
+```bash
+rustup target add x86_64-unknown-linux-gnu
+rustup target add x86_64-unknown-linux-musl
 ```
+
+For musl target, also install musl:
+```bash
+# Arch Linux
+pacman -S musl
+```
+
+### Build Commands
+
+Build for glibc (static-pie):
+```bash
+cargo build --release --target x86_64-unknown-linux-gnu
+```
+
+Build for musl (static):
+```bash
+cargo build --release --target x86_64-unknown-linux-musl
+```
+
+## Size Comparison
+
+| Target | Type | Size |
+|--------|------|------|
+| x86_64-unknown-linux-gnu | ELF 64-bit, static-pie linked | 1,163,184 bytes (1.1 MB) |
+| x86_64-unknown-linux-musl | ELF 64-bit, statically linked | 376,776 bytes (368 KB) |
+
+The musl target produces a binary **~3x smaller** than the glibc target.
 
 ## License
 
