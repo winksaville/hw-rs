@@ -18,5 +18,6 @@ fn main() -> i32 {
     unsafe {
         syscall3(Sysno::write, STDOUT, s.as_ptr() as usize, s.len()).ok();
     };
+
     0
 }
