@@ -8,22 +8,23 @@ const STDOUT: usize = 1;
 #[unsafe(no_mangle)]
 #[unsafe(naked)]
 pub extern "C" fn _start() -> ! {
-    // Kernel enters with RSP = 16n
     core::arch::naked_asm!(
         "call {rust_main}",
-        "ud2", // if rust_main returns we execute an undefined instruction
-               // https://linuxvox.com/blog/what-s-the-purpose-of-the-ud2-opcode-in-the-linux-kernel/
+        "mov rdi, rax",  // pass rust_main's return value as exit code
+        "call {exit}",
+        "ud2",           // safety net if exit somehow returns
         rust_main = sym rust_main,
+        exit = sym exit,
     );
 }
 
-fn rust_main() -> ! {
+fn rust_main() -> i32 {
     let s = "Hello, world!\n";
 
     unsafe {
         syscall3(Sysno::write, STDOUT, s.as_ptr() as usize, s.len()).ok();
     };
-    exit(0);
+    0
 }
 
 fn exit(code: usize) -> ! {
