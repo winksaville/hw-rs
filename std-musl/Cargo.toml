@@ -1,5 +1,5 @@
 [package]
-name = "hw-rs"
+name = "hw-std-musl"
 version = "0.1.0"
 edition = "2024"
 

@@ -1,0 +1,22 @@
+[package]
+name = "hw-no-std-no-main"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+syscalls = { version = "0.7.0", default-features = false }
+
+[profile.dev]
+panic = "abort"
+debug = 2
+opt-level = 'z'
+lto = true
+codegen-units = 1
+strip = false
+
+# Custom profile that inherits from dev, only adding strip.
+# This ensures dev and relver produce identical code - relver is just stripped.
+# Use: cargo build --profile relver
+[profile.relver]
+inherits = "dev"
+strip = true

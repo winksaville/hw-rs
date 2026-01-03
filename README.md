@@ -1,84 +1,74 @@
 # hw-rs
 
-A minimal "Hello, world!" program in Rust, optimized for binary size.
+A "Hello, world!" showdown: how small can a Rust binary get?
 
-## Code
+This repo contains three variants of the same program, demonstrating the dramatic
+size difference between standard library builds and bare-metal `no_std` + `no_main`.
 
-```rust
-fn main() {
-    println!("Hello, world!");
-}
+## Size Comparison
+
+| Variant | Binary Size | Relative Size |
+|---------|-------------|---------------|
+| `std-gnu` | 1,163,184 bytes (1.1 MB) | 996x |
+| `std-musl` | 376,776 bytes (368 KB) | 323x |
+| `no-std-no-main` | 1,168 bytes (1.1 KB) | 1x |
+
+All three produce the same output: `Hello, world!`
+
+## Variants
+
+### std-gnu
+
+Standard Rust with glibc, statically linked.
+
+```bash
+cd std-gnu
+cargo build --release
+./target/x86_64-unknown-linux-gnu/release/hw-std-gnu
 ```
 
-## Build Configuration
+### std-musl
 
-### Cargo.toml
+Standard Rust with musl libc, statically linked. Requires `musl-gcc`:
 
-Size optimizations in `profile.release`:
-```toml
-[profile.release]
-opt-level = 'z'
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = true
+```bash
+# Arch Linux
+pacman -S musl
+
+# Build
+cd std-musl
+cargo build --release
+./target/x86_64-unknown-linux-musl/release/hw-std-musl
 ```
 
-### .cargo/config.toml
+### no-std-no-main
 
-Two targets are configured:
-```toml
-# glibc: static + PIE
-[target.x86_64-unknown-linux-gnu]
-rustflags = [
-    "-C", "target-feature=+crt-static"
-]
+Bare-metal Rust using direct syscalls. No standard library, no libc.
 
-# musl: static + no-PIE (requires system musl: pacman -S musl)
-[target.x86_64-unknown-linux-musl]
-linker = "musl-gcc"
-rustflags = [
-    "-C", "relocation-model=static",
-    "-C", "link-arg=-no-pie",
-]
+```bash
+cd no-std-no-main
+cargo build --profile relver
+./target/x86_64-unknown-linux-gnu/relver/hw-no-std-no-main
 ```
 
-## Compile Instructions
+The `relver` profile produces optimized + stripped binaries. Use `cargo build` (dev profile)
+for debugging with symbols.
 
-### Prerequisites
+## Prerequisites
 
 Install the required targets:
+
 ```bash
 rustup target add x86_64-unknown-linux-gnu
 rustup target add x86_64-unknown-linux-musl
 ```
 
-For musl target, also install musl:
-```bash
-# Arch Linux
-pacman -S musl
-```
+## Why the Size Difference?
 
-### Build Commands
-
-Build for glibc (static-pie):
-```bash
-cargo build --release --target x86_64-unknown-linux-gnu
-```
-
-Build for musl (static):
-```bash
-cargo build --release --target x86_64-unknown-linux-musl
-```
-
-## Size Comparison
-
-| Target | Type | Size |
-|--------|------|------|
-| x86_64-unknown-linux-gnu | ELF 64-bit, static-pie linked | 1,163,184 bytes (1.1 MB) |
-| x86_64-unknown-linux-musl | ELF 64-bit, statically linked | 376,776 bytes (368 KB) |
-
-The musl target produces a binary **~3x smaller** than the glibc target.
+- **std-gnu**: Includes the full Rust standard library plus glibc, statically linked
+- **std-musl**: musl is a smaller libc implementation (~3x smaller than glibc)
+- **no-std-no-main**: No runtime, no libc, just raw syscalls. The binary contains
+  only the machine code needed to write "Hello, world!" to stdout and exit.
 
 ## License
 
